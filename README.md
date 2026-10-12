@@ -17,14 +17,14 @@ A full-stack chat assistant: React (Vite) client, Express API, MongoDB for histo
 Requires Node.js 20+.
 
 ```bash
-npm install
-npm install --prefix server
-npm install --prefix client
+npm run install:all                  # installs root, server and client dependencies
 cp server/.env.example server/.env   # then fill in the values
 npm run dev
 ```
 
 The client runs on http://localhost:5173 and proxies `/api` to the server on port 5000.
+
+The server checks for the required variables (`MONGODB_URI`, `GROQ_API_KEY`, `CHAT_MODEL`, `UTILITY_MODEL`) at startup and exits with a list of any that are missing.
 
 ### Environment variables (`server/.env`)
 
