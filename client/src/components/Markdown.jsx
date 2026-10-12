@@ -3,7 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 // Async build loads each language grammar on demand instead of bundling them all.
 import { PrismAsyncLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Copy } from "lucide-react";
+import codeTheme from "./codeTheme.js";
 
 function CodeBlock({ language, code }) {
   const [copied, setCopied] = useState(false);
@@ -21,16 +22,13 @@ function CodeBlock({ language, code }) {
   return (
     <div className="code-block">
       <div className="code-block__header">
-        <span>{language || "code"}</span>
-        <button type="button" onClick={copy}>
+        <span className="code-block__lang">{language || "code"}</span>
+        <button type="button" className="code-block__copy" onClick={copy}>
+          <Copy size={14} />
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <SyntaxHighlighter
-        language={language || "text"}
-        style={oneDark}
-        customStyle={{ margin: 0, borderRadius: "0 0 8px 8px", fontSize: "0.875rem" }}
-      >
+      <SyntaxHighlighter language={language || "text"} style={codeTheme}>
         {code}
       </SyntaxHighlighter>
     </div>
@@ -60,9 +58,9 @@ const components = {
   ),
 };
 
-function Markdown({ children }) {
+function Markdown({ children, streaming }) {
   return (
-    <div className="markdown">
+    <div className={`markdown ${streaming ? "markdown--streaming" : ""}`}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { ArrowUp, Square } from "lucide-react";
+import ToneToggle from "./ToneToggle.jsx";
 
-function Composer({ onSend, onStop, streaming, maxLength }) {
+function Composer({ onSend, onStop, streaming, maxLength, tones, tone, onToneChange }) {
   const [text, setText] = useState("");
   const ref = useRef(null);
 
@@ -10,6 +12,11 @@ function Composer({ onSend, onStop, streaming, maxLength }) {
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [text]);
+
+  // Hand focus back once the reply finishes (the textarea is disabled while streaming).
+  useEffect(() => {
+    if (!streaming) ref.current?.focus();
+  }, [streaming]);
 
   const tooLong = text.length > maxLength;
   const canSend = text.trim() && !tooLong && !streaming;
@@ -22,34 +29,45 @@ function Composer({ onSend, onStop, streaming, maxLength }) {
   };
 
   return (
-    <form className="composer" onSubmit={submit}>
-      <textarea
-        ref={ref}
-        rows={1}
-        value={text}
-        placeholder="Message the assistant…"
-        aria-label="Message"
-        autoFocus
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e);
-        }}
-      />
-      <div className="composer__footer">
-        <span className={`composer__count ${tooLong ? "composer__count--over" : ""}`}>
-          {text.length > maxLength * 0.8 && `${text.length} / ${maxLength}`}
-        </span>
-        {streaming ? (
-          <button type="button" className="btn btn--stop" onClick={onStop}>
-            Stop
-          </button>
-        ) : (
-          <button type="submit" className="btn" disabled={!canSend}>
-            Send
-          </button>
-        )}
-      </div>
-    </form>
+    <div className="composer-wrap">
+      <form className="composer" onSubmit={submit}>
+        <ToneToggle tones={tones} value={tone} onChange={onToneChange} />
+        <div className="composer__input-row">
+          <label htmlFor="composer-input" className="visually-hidden">
+            Message
+          </label>
+          <textarea
+            id="composer-input"
+            ref={ref}
+            rows={1}
+            value={text}
+            disabled={streaming}
+            placeholder={streaming ? "Waiting for the response to finish…" : "Message the assistant…"}
+            autoFocus
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e);
+            }}
+          />
+          {text.length > maxLength * 0.8 && (
+            <span className={`composer__count ${tooLong ? "composer__count--over" : ""}`}>
+              {text.length} / {maxLength}
+            </span>
+          )}
+          {streaming ? (
+            <button type="button" className="stop-btn" onClick={onStop}>
+              <Square size={14} fill="currentColor" />
+              Stop
+            </button>
+          ) : (
+            <button type="submit" className="send-btn" aria-label="Send message" disabled={!canSend}>
+              <ArrowUp size={20} />
+            </button>
+          )}
+        </div>
+      </form>
+      <p className="hint">Enter to send · Shift + Enter for a new line</p>
+    </div>
   );
 }
 

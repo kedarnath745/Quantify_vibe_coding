@@ -1,12 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertCircle, X } from "lucide-react";
 import { api, sendMessage } from "./api.js";
 import Sidebar from "./components/Sidebar.jsx";
+import ChatHeader from "./components/ChatHeader.jsx";
 import ChatView from "./components/ChatView.jsx";
 import Composer from "./components/Composer.jsx";
-import ToneToggle from "./components/ToneToggle.jsx";
 
 const STREAMING_ID = "streaming";
 const DEFAULT_TONE = "professional";
+// Relative times come from the server, so refresh the list now and then to keep them current.
+const LIST_REFRESH_MS = 60 * 1000;
+
+const toError = (err) => ({ message: err.message, status: err.status });
+
+function ErrorAlert({ error, onDismiss }) {
+  return (
+    <div className="error" role="alert">
+      <AlertCircle size={18} className="error__icon" />
+      <div className="error__body">
+        <p className="error__title">{error.status === 429 ? "Rate limit reached" : "Something went wrong"}</p>
+        <p className="error__message">{error.message}</p>
+      </div>
+      <button type="button" className="icon-btn error__dismiss" aria-label="Dismiss error" onClick={onDismiss}>
+        <X size={16} />
+      </button>
+    </div>
+  );
+}
 
 function App() {
   const [conversations, setConversations] = useState([]);
@@ -19,6 +39,7 @@ function App() {
   const [maxLength, setMaxLength] = useState(4000);
   const [tones, setTones] = useState([]);
   const [tone, setTone] = useState(DEFAULT_TONE);
+  const [modelLabel, setModelLabel] = useState("");
 
   // Refs let async callbacks see the latest selection and cancel stale work.
   const activeRef = useRef(null);
@@ -29,14 +50,26 @@ function App() {
     setActiveId(id);
   };
 
+  const upsertConversation = (conversation) =>
+    setConversations((cs) => [conversation, ...cs.filter((c) => c._id !== conversation._id)]);
+
+  const replaceConversation = (conversation) =>
+    setConversations((cs) => cs.map((c) => (c._id === conversation._id ? conversation : c)));
+
   const refreshList = useCallback(() => {
-    api.listConversations().then(setConversations).catch((err) => setError(err.message));
+    api.listConversations().then(setConversations).catch((err) => setError(toError(err)));
   }, []);
 
   useEffect(() => {
     api.getConfig().then((c) => setMaxLength(c.maxMessageLength)).catch(() => {});
     api.getTones().then(setTones).catch(() => {});
+    api.getMeta().then((m) => setModelLabel(m.modelLabel)).catch(() => {});
     refreshList();
+
+    const timer = setInterval(() => {
+      api.listConversations().then(setConversations).catch(() => {});
+    }, LIST_REFRESH_MS);
+    return () => clearInterval(timer);
   }, [refreshList]);
 
   const stopStreaming = () => abortRef.current?.abort();
@@ -50,12 +83,13 @@ function App() {
     setLoading(true);
     try {
       const data = await api.getConversation(id);
+      replaceConversation(data.conversation);
       if (activeRef.current === id) {
         setMessages(data.messages);
         setTone(data.conversation.tone || DEFAULT_TONE);
       }
     } catch (err) {
-      if (activeRef.current === id) setError(err.message);
+      if (activeRef.current === id) setError(toError(err));
     } finally {
       if (activeRef.current === id) setLoading(false);
     }
@@ -74,10 +108,10 @@ function App() {
     const previous = conversations;
     setConversations((cs) => cs.map((c) => (c._id === id ? { ...c, title } : c)));
     try {
-      await api.renameConversation(id, title);
+      replaceConversation(await api.renameConversation(id, title));
     } catch (err) {
       setConversations(previous);
-      setError(err.message);
+      setError(toError(err));
     }
   };
 
@@ -87,7 +121,7 @@ function App() {
       setConversations((cs) => cs.filter((c) => c._id !== id));
       if (activeRef.current === id) newChat();
     } catch (err) {
-      setError(err.message);
+      setError(toError(err));
     }
   };
 
@@ -102,7 +136,7 @@ function App() {
         setConversations((cs) => [conversation, ...cs]);
         selectActive(id);
       } catch (err) {
-        setError(err.message);
+        setError(toError(err));
         return;
       }
     }
@@ -133,11 +167,9 @@ function App() {
           onUser: (saved) =>
             isCurrent() && setMessages((ms) => ms.map((m) => (m._id === tempId ? saved : m))),
           onDelta: (text) => isCurrent() && updateStreaming((m) => ({ ...m, content: m.content + text })),
-          onError: (message) => isCurrent() && setError(message),
+          onError: (message, status) => isCurrent() && setError({ message, status }),
           onDone: ({ message, conversation }) => {
-            if (conversation) {
-              setConversations((cs) => [conversation, ...cs.filter((c) => c._id !== conversation._id)]);
-            }
+            if (conversation) upsertConversation(conversation);
             if (!isCurrent()) return;
             if (message) updateStreaming(() => message);
             else dropEmptyStreaming();
@@ -146,7 +178,7 @@ function App() {
         controller.signal
       );
     } catch (err) {
-      if (err.name !== "AbortError" && isCurrent()) setError(err.message);
+      if (err.name !== "AbortError" && isCurrent()) setError(toError(err));
       if (isCurrent()) {
         // Keep whatever arrived before the stop, flagged as unfinished; drop it if empty.
         setMessages((ms) =>
@@ -168,32 +200,28 @@ function App() {
     }
   };
 
-  const activeTitle = conversations.find((c) => c._id === activeId)?.title || "New chat";
+  const activeConversation = conversations.find((c) => c._id === activeId) || null;
 
   return (
     <div className="app">
       <Sidebar
         conversations={conversations}
         activeId={activeId}
+        modelLabel={modelLabel}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNew={newChat}
         onSelect={openConversation}
-        onRename={renameConversation}
         onDelete={deleteConversation}
       />
       <main className="main">
-        <header className="topbar">
-          <button
-            type="button"
-            className="menu-btn"
-            aria-label="Open conversations"
-            onClick={() => setSidebarOpen(true)}
-          >
-            ☰
-          </button>
-          <span className="topbar__title">{activeTitle}</span>
-        </header>
+        <ChatHeader
+          key={activeId || "none"}
+          conversation={activeConversation}
+          onMenu={() => setSidebarOpen(true)}
+          onRename={renameConversation}
+          onDelete={deleteConversation}
+        />
         <ChatView
           messages={messages}
           loading={loading}
@@ -202,17 +230,16 @@ function App() {
           onSuggestion={send}
         />
         <div className="bottom">
-          {error && (
-            <div className="error" role="alert">
-              <span>{error}</span>
-              <button type="button" aria-label="Dismiss" onClick={() => setError(null)}>
-                ✕
-              </button>
-            </div>
-          )}
-          <ToneToggle tones={tones} value={tone} onChange={setTone} />
-          <Composer onSend={send} onStop={stopStreaming} streaming={streaming} maxLength={maxLength} />
-          <p className="hint">Enter to send · Shift+Enter for a new line</p>
+          {error && <ErrorAlert error={error} onDismiss={() => setError(null)} />}
+          <Composer
+            onSend={send}
+            onStop={stopStreaming}
+            streaming={streaming}
+            maxLength={maxLength}
+            tones={tones}
+            tone={tone}
+            onToneChange={setTone}
+          />
         </div>
       </main>
     </div>

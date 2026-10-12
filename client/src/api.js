@@ -1,3 +1,10 @@
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`/api${path}`, {
     ...options,
@@ -5,12 +12,13 @@ async function request(path, options = {}) {
   });
   if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (!res.ok) throw new ApiError(data.error || `Request failed (${res.status})`, res.status);
   return data;
 }
 
 export const api = {
   getConfig: () => request("/config"),
+  getMeta: () => request("/meta"),
   getTones: () => request("/tones"),
   listConversations: () => request("/conversations"),
   createConversation: () => request("/conversations", { method: "POST" }),
@@ -22,7 +30,7 @@ export const api = {
 
 /**
  * Sends a message and consumes the Server-Sent Events reply stream.
- * handlers: { onUser, onDelta, onDone, onError }
+ * handlers: { onUser, onDelta, onDone, onError(message, status) }
  */
 export async function sendMessage(conversationId, content, tone, handlers, signal) {
   const res = await fetch(`/api/conversations/${conversationId}/messages`, {
@@ -34,7 +42,7 @@ export async function sendMessage(conversationId, content, tone, handlers, signa
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `Request failed (${res.status})`);
+    throw new ApiError(data.error || `Request failed (${res.status})`, res.status);
   }
 
   const reader = res.body.getReader();
@@ -63,7 +71,7 @@ export async function sendMessage(conversationId, content, tone, handlers, signa
       if (event === "user") handlers.onUser?.(payload);
       else if (event === "delta") handlers.onDelta?.(payload.text);
       else if (event === "done") handlers.onDone?.(payload);
-      else if (event === "error") handlers.onError?.(payload.error);
+      else if (event === "error") handlers.onError?.(payload.error, payload.status);
     }
   }
 }
