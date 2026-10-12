@@ -176,7 +176,13 @@ function ChatView({ messages, loading, tones, streaming, onSuggestion }) {
   const innerRef = useRef(null);
   const hasMessages = messages.length > 0;
 
-  // Follow new content only while the user is already at the bottom.
+  // Follow new content only while the user is already at the bottom; a freshly opened
+  // conversation or a newly sent message always jumps there.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (loading || (last?.streaming && !last.content)) pinnedRef.current = true;
+  }, [messages, loading]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el && pinnedRef.current) el.scrollTop = el.scrollHeight;

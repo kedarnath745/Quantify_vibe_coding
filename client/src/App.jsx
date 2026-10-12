@@ -159,6 +159,7 @@ function App() {
     const controller = new AbortController();
     abortRef.current = controller;
     setStreaming(true);
+    let userSaved = false;
 
     try {
       await sendMessage(
@@ -166,8 +167,10 @@ function App() {
         content,
         tone,
         {
-          onUser: (saved) =>
-            isCurrent() && setMessages((ms) => ms.map((m) => (m._id === tempId ? saved : m))),
+          onUser: (saved) => {
+            userSaved = true;
+            if (isCurrent()) setMessages((ms) => ms.map((m) => (m._id === tempId ? saved : m)));
+          },
           onDelta: (text) => isCurrent() && updateStreaming((m) => ({ ...m, content: m.content + text })),
           onError: (message, status) => isCurrent() && setError({ message, status }),
           onDone: ({ message, conversation }) => {
@@ -182,15 +185,15 @@ function App() {
     } catch (err) {
       if (err.name !== "AbortError" && isCurrent()) setError(toError(err));
       if (isCurrent()) {
+        // A request rejected before the server saved it (validation, network) leaves no message.
+        const dropUser = !userSaved && err.name !== "AbortError";
         // Keep whatever arrived before the stop, flagged as unfinished; drop it if empty.
         setMessages((ms) =>
-          ms.flatMap((m) =>
-            m._id !== STREAMING_ID
-              ? [m]
-              : m.content
-                ? [{ ...m, _id: `local-${Date.now()}`, streaming: false, incomplete: true }]
-                : []
-          )
+          ms.flatMap((m) => {
+            if (m._id === tempId) return dropUser ? [] : [m];
+            if (m._id !== STREAMING_ID) return [m];
+            return m.content ? [{ ...m, _id: `local-${Date.now()}`, streaming: false, incomplete: true }] : [];
+          })
         );
       }
       if (err.name === "AbortError") refreshList();

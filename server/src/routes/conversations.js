@@ -178,6 +178,13 @@ router.post(
     // The SDK ends an aborted stream quietly instead of throwing, so check explicitly.
     if (controller.signal.aborted) failed = true;
 
+    // The conversation may have been deleted while streaming (deleting the open chat also stops
+    // it); saving the reply then would leave orphaned messages behind.
+    if (!(await Conversation.exists({ _id: conversation._id }))) {
+      send("done", { message: null, conversation: null });
+      return res.end();
+    }
+
     let assistantMessage = null;
     if (reply.trim()) {
       assistantMessage = await Message.create({
@@ -215,7 +222,7 @@ router.post(
 
     send("done", {
       message: assistantMessage,
-      // Null if the conversation was deleted while the reply was streaming.
+      // Null if the conversation was deleted in the meantime.
       conversation: updated && present(updated, await countMessages(updated._id)),
     });
     res.end();

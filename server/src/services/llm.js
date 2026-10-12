@@ -80,9 +80,10 @@ export async function generateFollowUps(userText, assistantText) {
   });
 
   const text = completion.choices[0]?.message?.content ?? "";
-  return text
+  const questions = text
     .split("\n")
     .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").replace(/^["']|["']$/g, "").trim())
-    .filter((line) => line.length > 3 && line.length <= 150)
-    .slice(0, 3);
+    .filter((line) => line.length > 3 && line.length <= 150);
+  // Deduplicated because the client uses each question as a React key.
+  return [...new Set(questions)].slice(0, 3);
 }
