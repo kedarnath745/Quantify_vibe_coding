@@ -10,7 +10,7 @@ A full-stack chat assistant: React (Vite) client, Express API, MongoDB for histo
 - Tone toggle (Professional / Casual / Concise) applied server-side as a system instruction; each reply shows its tone
 - Follow-up question chips under the latest reply
 - Markdown rendering with tables, syntax-highlighted code blocks and copy buttons
-- Dark UI (Manrope + JetBrains Mono, lucide icons) with 44px touch targets and a slide-out sidebar on mobile
+- Light and dark themes (follows the system until you pick one; code blocks stay dark), Manrope + JetBrains Mono, lucide icons, with 44px touch targets and a slide-out sidebar on mobile
 
 ## Setup
 

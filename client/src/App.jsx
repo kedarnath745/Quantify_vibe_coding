@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { api, sendMessage } from "./api.js";
+import { useTheme } from "./theme.js";
 import Sidebar from "./components/Sidebar.jsx";
 import ChatHeader from "./components/ChatHeader.jsx";
 import ChatView from "./components/ChatView.jsx";
@@ -40,6 +41,7 @@ function App() {
   const [tones, setTones] = useState([]);
   const [tone, setTone] = useState(DEFAULT_TONE);
   const [modelLabel, setModelLabel] = useState("");
+  const { theme, toggleTheme } = useTheme();
 
   // Refs let async callbacks see the latest selection and cancel stale work.
   const activeRef = useRef(null);
@@ -208,6 +210,8 @@ function App() {
         conversations={conversations}
         activeId={activeId}
         modelLabel={modelLabel}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNew={newChat}

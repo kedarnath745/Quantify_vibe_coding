@@ -1,8 +1,9 @@
-// Prism theme for react-syntax-highlighter, matched to the app's palette.
+// Prism theme for react-syntax-highlighter. Colours come from the --code-*/--syntax-* tokens,
+// which are the same in both themes because code blocks always stay dark.
 const mono = '"JetBrains Mono", ui-monospace, Consolas, monospace';
 
 const base = {
-  color: "#DDE1E8",
+  color: "var(--code-text)",
   background: "none",
   fontFamily: mono,
   fontSize: "13px",
@@ -15,9 +16,9 @@ const base = {
   hyphens: "none",
 };
 
-const keyword = { color: "#9AA4FF" };
-const literal = { color: "#F0B37E" };
-const fn = { color: "#6FD3BE" };
+const keyword = { color: "var(--syntax-keyword)" };
+const literal = { color: "var(--syntax-literal)" };
+const fn = { color: "var(--syntax-function)" };
 
 export default {
   'code[class*="language-"]': base,
@@ -28,11 +29,11 @@ export default {
     overflow: "auto",
     background: "var(--code-bg)",
   },
-  comment: { color: "#7E8696", fontStyle: "italic" },
-  prolog: { color: "#7E8696" },
-  doctype: { color: "#7E8696" },
-  cdata: { color: "#7E8696" },
-  punctuation: { color: "#A3AAB8" },
+  comment: { color: "var(--syntax-comment)", fontStyle: "italic" },
+  prolog: { color: "var(--syntax-comment)" },
+  doctype: { color: "var(--syntax-comment)" },
+  cdata: { color: "var(--syntax-comment)" },
+  punctuation: { color: "var(--code-muted)" },
   keyword,
   atrule: keyword,
   important: keyword,
@@ -51,11 +52,11 @@ export default {
   function: fn,
   "class-name": fn,
   builtin: fn,
-  operator: { color: "#C3C9FF" },
-  property: { color: "#DDE1E8" },
-  variable: { color: "#DDE1E8" },
-  deleted: { color: "#F49AA6" },
-  inserted: { color: "#6FD3BE" },
+  operator: { color: "var(--syntax-operator)" },
+  property: { color: "var(--code-text)" },
+  variable: { color: "var(--code-text)" },
+  deleted: { color: "var(--syntax-deleted)" },
+  inserted: { color: "var(--syntax-function)" },
   bold: { fontWeight: 700 },
   italic: { fontStyle: "italic" },
 };

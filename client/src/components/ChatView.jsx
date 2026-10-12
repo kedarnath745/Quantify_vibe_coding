@@ -16,29 +16,25 @@ import ErrorBoundary from "./ErrorBoundary.jsx";
 const STARTERS = [
   {
     icon: Code,
-    tile: "#1F2330",
-    color: "#9AA4FF",
+    variant: "code",
     title: "Explain how React hooks work",
     subtitle: "useState, useEffect and when to use them",
   },
   {
     icon: AlignLeft,
-    tile: "#2A2219",
-    color: "#F0A35E",
+    variant: "text",
     title: "Write a Python script to rename files",
     subtitle: "Batch-rename everything in a folder",
   },
   {
     icon: Database,
-    tile: "#16302B",
-    color: "#6FD3BE",
+    variant: "data",
     title: "What's the difference between SQL and NoSQL?",
     subtitle: "Schemas, scaling and relationships",
   },
   {
     icon: Briefcase,
-    tile: "#2A1F33",
-    color: "#C9A2F2",
+    variant: "career",
     title: "Give me tips for a technical interview",
     subtitle: "Preparation, structure and common pitfalls",
   },
@@ -151,9 +147,14 @@ function EmptyState({ onStart }) {
           <p className="empty__subtitle">Pick a tone below, then ask anything or start from a suggestion.</p>
         </div>
         <div className="starters">
-          {STARTERS.map(({ icon: Icon, tile, color, title, subtitle }) => (
-            <button key={title} type="button" className="starter" onClick={() => onStart(title)}>
-              <span className="starter__icon" style={{ background: tile, color }}>
+          {STARTERS.map(({ icon: Icon, variant, title, subtitle }) => (
+            <button
+              key={title}
+              type="button"
+              className={`starter starter--${variant}`}
+              onClick={() => onStart(title)}
+            >
+              <span className="starter__icon">
                 <Icon size={18} />
               </span>
               <span className="starter__text">

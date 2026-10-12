@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Moon, Plus, Sparkles, Sun, Trash2 } from "lucide-react";
 
 function ConversationItem({ conversation, active, onSelect, onDelete }) {
   const [confirming, setConfirming] = useState(false);
@@ -43,7 +43,18 @@ function ConversationItem({ conversation, active, onSelect, onDelete }) {
   );
 }
 
-function Sidebar({ conversations, activeId, modelLabel, open, onClose, onNew, onSelect, onDelete }) {
+function Sidebar({
+  conversations,
+  activeId,
+  modelLabel,
+  theme,
+  onToggleTheme,
+  open,
+  onClose,
+  onNew,
+  onSelect,
+  onDelete,
+}) {
   // The server already sorts newest first and labels each group.
   const groups = [];
   for (const c of conversations) {
@@ -57,9 +68,18 @@ function Sidebar({ conversations, activeId, modelLabel, open, onClose, onNew, on
       <aside className={`sidebar ${open ? "sidebar--open" : ""}`}>
         <div className="brand">
           <span className="brand__tile">
-            <Sparkles size={16} color="#fff" />
+            <Sparkles size={16} />
           </span>
           <span className="brand__name">AI Chat Assistant</span>
+          <button
+            type="button"
+            className="icon-btn brand__theme"
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            onClick={onToggleTheme}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </div>
 
         <button type="button" className="new-chat" onClick={onNew}>
