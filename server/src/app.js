@@ -19,6 +19,10 @@ app.get("/api/config", (req, res) => {
   res.json({ maxMessageLength: Number(process.env.MAX_MESSAGE_LENGTH) || 4000 });
 });
 
+app.get("/api/meta", (req, res) => {
+  res.json({ modelLabel: `${process.env.CHAT_MODEL || "unknown model"} via Groq` });
+});
+
 app.get("/api/tones", (req, res) => {
   res.json(listTones());
 });

@@ -2,7 +2,7 @@
 export const TONES = {
   professional: {
     label: "Professional",
-    description: "Clear, precise and well-structured",
+    description: "Formal, precise and well structured",
     prompt:
       "Tone: professional. Write in a clear, precise and courteous register. " +
       "Structure longer answers with headings or lists, avoid slang and filler, and stay objective.",
@@ -16,7 +16,7 @@ export const TONES = {
   },
   concise: {
     label: "Concise",
-    description: "Short, direct answers",
+    description: "Short, direct answers with no filler",
     prompt:
       "Tone: concise. Give the shortest answer that fully addresses the question. " +
       "Lead with the answer, skip preambles and recaps, and prefer a few bullet points over paragraphs.",

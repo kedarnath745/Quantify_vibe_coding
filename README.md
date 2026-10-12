@@ -46,10 +46,11 @@ The client runs on http://localhost:5173 and proxies `/api` to the server on por
 |---|---|---|
 | `GET` | `/api/health` | Server and database status |
 | `GET` | `/api/config` | Client settings (max message length) |
+| `GET` | `/api/meta` | `{ modelLabel }`, e.g. `openai/gpt-oss-120b via Groq` |
 | `GET` | `/api/tones` | Available tones: `[{ id, label, description }]` |
-| `GET` | `/api/conversations` | List conversations, newest first |
+| `GET` | `/api/conversations` | List conversations, newest first, each with `messageCount`, `group` (`Today` / `Earlier`), `relativeTime` and `startedTime` labels computed on the server |
 | `POST` | `/api/conversations` | Create a conversation |
-| `GET` | `/api/conversations/:id` | Conversation with its messages |
+| `GET` | `/api/conversations/:id` | Conversation with its messages and `messageCount` |
 | `PATCH` | `/api/conversations/:id` | Rename (`{ "title": "..." }`) |
 | `DELETE` | `/api/conversations/:id` | Delete a conversation and its messages |
 | `POST` | `/api/conversations/:id/messages` | Send `{ "content": "...", "tone": "professional" }` (`tone` optional, `400` if unknown); replies as an SSE stream of `user`, `delta`, `done` and `error` events |
@@ -68,6 +69,7 @@ server/src/
   models/                Conversation and Message schemas
   prompts/tones.js       Tone definitions and system prompt modifiers
   routes/conversations.js
+  utils/time.js          Relative time and Today/Earlier labels
   services/llm.js        Groq streaming chat, titles and follow-up questions
   middleware/errors.js
 ```
